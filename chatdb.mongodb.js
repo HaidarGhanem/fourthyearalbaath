@@ -2,6 +2,8 @@
 // MongoDB Playground
 // Use Ctrl+Space inside a snippet or a string literal to trigger completions.
 
+const { ObjectId } = require("mongodb");
+
 const database = 'chatdb';
 const collection = 'chat';
 
@@ -10,6 +12,7 @@ use(database);
 
 // Create a new collection.
 db.createCollection(collection,{
+     userid : ObjectId,
      sender: ObjectId,
      receiver: ObjectId,
      message: String,

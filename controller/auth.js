@@ -53,7 +53,7 @@ const login = (req,res) => {
             if (emaillogin === data.email && passwordlogin === data.password)
             {
                 console.log('login done seccussfully');
-                router.get('/mainapp',main);
+                router.get('/main',main);
             }
             else if(emaillogin !=data.email || passwordlogin != data.password )
             {
@@ -68,14 +68,9 @@ const login = (req,res) => {
         res.status(500).json({message: error});
     }
 }
-const main = (req,res) =>{
+const searching = (req,res) =>{
     try{
-        /**
-         * will write the session to follow ueser account
-         * sending user info to front
-         * sending chats info to front 
-         * we got return in the end
-         */
+        
 
     }
     catch{
@@ -83,13 +78,5 @@ const main = (req,res) =>{
         res.status(500).json({message: error}); 
     }
 }
-const chatcontroller = (req,res) =>{
-    try{
 
-    }
-    catch{
-        console.log(error);
-        res.status(500).json({message: error}); 
-    }
-}
-module.exports = {login , signup , main , chatcontroller};
+module.exports = {login , signup , searching };
