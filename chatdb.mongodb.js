@@ -12,7 +12,9 @@ use(database);
 
 // Create a new collection.
 db.createCollection(collection,{
-     userid : ObjectId,
+     chatid : ObjectId,
+     userid1 : ObjectId,
+     userid2 : ObjectId,
      sender: ObjectId,
      receiver: ObjectId,
      message: String,

@@ -6,7 +6,7 @@ require('dotenv').config();
 
 
  //here we gonna upload infos for new ueser in db
- const mongoURI = 'monogodb://localhost:27017/userdb';
+ const mongoURI = Mongo_URI;
  //just checking for db connection is good with userdb
  mongoose
  .connect(mongoURI)
@@ -14,8 +14,8 @@ require('dotenv').config();
  .catch((err)=>console.error('error connecting userdb'));
  //done checking
  //creating model (models are always capital letter)
- const UserModel = mongoose.model('user',collection);
-
+ const UserModel = mongoose.model('userdb',collection);
+ const ChatModel = mongoose.model('chatdb',collection);
 //----creating controller for signup-------
 const signup = (req,res) => {
     try{
@@ -41,6 +41,7 @@ const signup = (req,res) => {
         res.status(500).json({message: error});
     }
 }
+//----creating controller for login-------
 const login = (req,res) => {
     try{
         //getting the input of email and password from body
@@ -49,16 +50,20 @@ const login = (req,res) => {
         const userdata = {emaillogin , passwordlogin};
         //getting data from the model to compare with
         array.forEach(UserModel => { 
-            const data = UserModel.find(email,password);
-            if (emaillogin === data.email && passwordlogin === data.password)
+            const data = UserModel.find({email,password}, (err,doc)=>{
+
+            
+            if (userdata.emaillogin === data.email && userdata.passwordlogin === data.password)
             {
                 console.log('login done seccussfully');
                 router.get('/main',main);
             }
-            else if(emaillogin !=data.email || passwordlogin != data.password )
+            else if(err)
             {
-                res.status(500).console.log('logging in error');
+                console.error('Error fetching data from MongoDB:', err);
+                return;
             }
+        });
         });
         
 
@@ -68,15 +73,43 @@ const login = (req,res) => {
         res.status(500).json({message: error});
     }
 }
-const searching = (req,res) =>{
+//----creating controller for searching-------
+const searching = async (req,res) =>{
     try{
-        
-
+        //if user wrote one of those for searching
+        const {userid , phonenumber , firstname } = await req.body;
+        //store those to search in them in db
+        const userdata = {userid , phonenumber , firstname};
+        //getting data from the model to compare with
+        array.forEach(UserModel => { 
+            const data = UserModel.find({userid , phonenumber , firstname},(err,doc)=>{
+            if (userdata.userid === data.userid || userdata.phonenumber === data.phonenumber || userdata.firstname === data.firstname)
+            {
+                return (data);
+            }
+            else if(userdata.userid != data.userid || userdata.phonenumber != data.phonenumber || userdata.firstname != data.firstname )
+            {
+                res.status(500).console.log('couldnt find user');
+            }});
+        });
     }
     catch{
         console.log(error);
         res.status(500).json({message: error}); 
     }
 }
+//----creating controller for chat with the user-------
+const signalchat = (req,res)=>{
+    //after front form for signal chat
+    try{
+        //we will see if there an old chat with this user
+        //if there isnt create new chat with own chatid 
+        //connect the userid1 & userid2 with chatid to store the chat
+        //controller for making a socket.io conn with the chat
+        //if there was an chat with the userid2 upload it from ChatModel.chatdb
+    }
+    catch{
 
-module.exports = {login , signup , searching };
+    }
+}
+module.exports = {login , signup , searching , signalchat};
