@@ -15,8 +15,8 @@ db.createCollection(collection,{
      chatid : ObjectId,
      userid1 : ObjectId,
      userid2 : ObjectId,
-     sender: ObjectId,
-     receiver: ObjectId,
+     //sender: ObjectId,
+     //receiver: ObjectId,
      message: String,
      timestamp: Date
 });

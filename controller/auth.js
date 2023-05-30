@@ -9,13 +9,20 @@ require('dotenv').config();
  const mongoURI = Mongo_URI;
  //just checking for db connection is good with userdb
  mongoose
- .connect(mongoURI)
+ .connect(mongoURI+'/userdb')
  .then(()=>{console.log('connected to userdb');})
  .catch((err)=>console.error('error connecting userdb'));
+ //done checking
+ //just checking for db connection is good with chatdb
+ mongoose
+ .connect(mongoURI+'/chatdb')
+ .then(()=>{console.log('connected to chatdb');})
+ .catch((err)=>console.error('error connecting chatdb'));
  //done checking
  //creating model (models are always capital letter)
  const UserModel = mongoose.model('userdb',collection);
  const ChatModel = mongoose.model('chatdb',collection);
+ 
 //----creating controller for signup-------
 const signup = (req,res) => {
     try{
@@ -107,6 +114,25 @@ const signalchat = (req,res)=>{
         //connect the userid1 & userid2 with chatid to store the chat
         //controller for making a socket.io conn with the chat
         //if there was an chat with the userid2 upload it from ChatModel.chatdb
+        //----------------------------------------------------------------------
+        
+
+        //getting the login userid and compare with the user2id if there is any chat
+        const {userid1 , userid2 , firstname} = req.body;
+        const chatdata = {userid1 , userid2 , firstname};
+        //see if there any chatmodel contains in its collection both of ids
+        array.forEach(ChatModel => { 
+            const data = ChatModel.find({userid1 , userid2},(err,doc)=>{
+            if (chatdata.userid1 === data.userid1 && chatdata.userid2 === data.userid2)
+            {
+                const thischat = ChatModel.get
+                return (data);
+            }
+            else if(userdata.userid != data.userid || userdata.phonenumber != data.phonenumber || userdata.firstname != data.firstname )
+            {
+                res.status(500).console.log('couldnt find user');
+            }});
+        });
     }
     catch{
 
