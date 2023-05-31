@@ -1,6 +1,8 @@
 const crypto = require('crypto');
 const mongodb = require('mongodb');
 const mongoose = require('mongoose');
+const passport = require('passport');
+const LocalStrategy = require('passport-local').Strategy;
 const router = require('../routes/auth.js');
 const io = require('socket.io');
 require('dotenv').config();
@@ -23,64 +25,114 @@ require('dotenv').config();
  //creating model (models are always capital letter)
  const UserModel = mongoose.model('userdb',collection);
  const ChatModel = mongoose.model('chatdb',collection);
- 
-//----creating controller for signup-------
-const signup = (req,res) => {
-    try{
-        //get informations from the body as JSON
-        const { firstname, lastname, email, password, phonenumber } = req.body;
-        //storing values in array of objects to share it with db
-        const userdata = { firstname, lastname, email, password, phonenumber };
-        //creating hashed random userid for security
+
+ //===========================================================================================
+ // OLD SIGNUP AND LOGIN WITHOUT SESSION THING IN COMMENT :
+                                    /** 
+                                        //----creating controller for signup-------
+                                        const signup = (req,res) => {
+                                            try{
+                                                //get informations from the body as JSON
+                                                const { firstname, lastname, email, password, phonenumber } = req.body;
+                                                //storing values in array of objects to share it with db
+                                                const userdata = { firstname, lastname, email, password, phonenumber };
+                                                //creating hashed random userid for security
+                                                const userid = crypto.randomBytes(8).toString('hex');
+                                                             //creating new user doc to save his infos in
+                                                             const newUser = new UserModel(userdata);
+                                                             newUser.save((err)=>{
+                                                                if(err){
+                                                                    console.error(err);
+                                                                    res.status(500).json({message: error});
+                                                                }
+                                                                else {
+                                                                    res.status(200).send('user saved in db');
+                                                                }});
+                                            }
+                                            catch (error) {
+                                                console.log(error);
+                                                res.status(500).json({message: error});
+                                            }
+                                        }
+                                     
+                                          //----creating controller for login-------
+                                          const login = (req,res) => {
+                                              try{
+                                                  //getting the input of email and password from body
+                                                  const {emaillogin , passwordlogin} = req.body;
+                                                  //storing what client wrote in body
+                                                  const userdata = {emaillogin , passwordlogin};
+                                                  //getting data from the model to compare with
+                                                  array.forEach(UserModel => { 
+                                                      const data = UserModel.find({email,password}, (err,doc)=>{
+                                          
+                                                      
+                                                      if (userdata.emaillogin === data.email && userdata.passwordlogin === data.password)
+                                                      {
+                                                          console.log('login done seccussfully');
+                                                          router.get('/main',main);
+                                                      }
+                                                      else if(err)
+                                                      {
+                                                          console.error('Error fetching data from MongoDB:', err);
+                                                          return;
+                                                      }
+                                                  });
+                                                  });
+                                                  
+                                          
+                                              }
+                                              catch{
+                                                  console.log(error);
+                                                  res.status(500).json({message: error});
+                                              }
+                                          }*/
+//===========================================================================================
+const signup = async (req, res, next) => {
+    const { email, password , firstname , lastname , phonenumber } = req.body;
+    try {
         const userid = crypto.randomBytes(8).toString('hex');
-                     //creating new user doc to save his infos in
-                     const newUser = new UserModel(userdata);
-                     newUser.save((err)=>{
-                        if(err){
-                            console.error(err);
-                            res.status(500).json({message: error});
-                        }
-                        else {
-                            res.status(200).send('user saved in db');
-                        }});
-    }
-    catch (error) {
-        console.log(error);
-        res.status(500).json({message: error});
-    }
-}
-//----creating controller for login-------
-const login = (req,res) => {
-    try{
-        //getting the input of email and password from body
-        const {emaillogin , passwordlogin} = req.body;
-        //storing what client wrote in body
-        const userdata = {emaillogin , passwordlogin};
-        //getting data from the model to compare with
-        array.forEach(UserModel => { 
-            const data = UserModel.find({email,password}, (err,doc)=>{
-
-            
-            if (userdata.emaillogin === data.email && userdata.passwordlogin === data.password)
-            {
-                console.log('login done seccussfully');
-                router.get('/main',main);
+        const user = await UserModel.create({ email, password , firstname , lastname , userid , phonenumber});
+        req.save(user, (err) => {
+            if (err) {
+                return next(err);
             }
-            else if(err)
-            {
-                console.error('Error fetching data from MongoDB:', err);
-                return;
-            }
+            return res.redirect('/');
         });
-        });
-        
+    } catch (err) {
+        return next(err);
+    }
+};
+const login =  async (req, res, done) => {
+    const { email , password } = req.body;
+    try {
+        const user = await UserModel.findOne({ email });
+        if (!user) {
+            return done(null, false, { message: 'Incorrect email or password.' });
+        }
+        const match = await compare(password, user.password);
+        if (!match) {
+            return done(null, false, { message: 'Incorrect email or password.' });
+        }
+        return done(null, user);
+    } catch (err) {
+        return done(err);
+    }
+};
 
+passport.serializeUser((user, done) => {
+    done(null, user.userid);
+});
+
+passport.deserializeUser(async (userid, done) => {
+    try {
+        const user = await UserModel.findById(userid);
+        done(null, user);
+    } catch (err) {
+        done(err);
     }
-    catch{
-        console.log(error);
-        res.status(500).json({message: error});
-    }
-}
+});
+
 //----creating controller for searching-------
 const searching = async (req,res) =>{
     try{
@@ -222,4 +274,95 @@ io.on('connection', (socket) => {
     });
   });
 }
-module.exports = {login , signup , searching , signalchat , chattingSingal , groupchat , chattingGroup};
+const videocall = (io) =>{
+    io.on('connection', (socket) => {
+        console.log('User connected:', socket.id);
+      
+        socket.on('join-room', (roomid) => {
+          const roomClients = io.sockets.adapter.rooms.get(roomid);
+      
+          if (roomClients && roomClients.size > 1) {
+            socket.emit('error', 'Room is full');
+            return;
+          }
+      
+          socket.join(roomid);
+          socket.emit('joined-room', roomid);
+      
+          socket.on('disconnect', () => {
+            socket.broadcast.to(roomid).emit('user-disconnected', socket.id);
+          });
+      
+          socket.on('offer', (offer) => {
+            socket.broadcast.to(roomid).emit('offer', offer);
+          });
+      
+          socket.on('answer', (answer) => {
+            socket.broadcast.to(roomid).emit('answer', answer);
+          });
+      
+          socket.on('ice-candidate', (candidate) => {
+            socket.broadcast.to(roomid).emit('ice-candidate', candidate);
+
+                                /**
+                                 *  ----------------WebRTC logic for client side-----------
+                                 * <script>
+                                  const socket = io();
+                                  const localVideo = document.getElementById('localVideo');
+                                  const remoteVideo = document.getElementById('remoteVideo');
+                                  const roomId = 'test-room'; // Replace this with a unique room ID
+
+                                  // WebRTC setup
+                                  const configuration = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+                                  const pc = new RTCPeerConnection(configuration);
+
+                                  pc.onicecandidate = (event) => {
+                                    if (event.candidate) {
+                                      socket.emit('ice-candidate', event.candidate);
+                                    }
+                                  };
+
+                                  pc.ontrack = (event) => {
+                                    remoteVideo.srcObject = event.streams[0];
+                                  };
+
+                                  // Get local media stream
+                                  navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+                                    .then((stream) => {
+                                      localVideo.srcObject = stream;
+                                      stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+                                      socket.emit('join-room', roomId);
+                                    })
+                                    .catch((error) => console.error('Error accessing media devices.', error));
+
+                                  // Socket.IO event handlers
+                                  socket.on('joined-room', () => {
+                                    pc.createOffer()
+                                      .then((offer) => pc.setLocalDescription(offer))
+                                      .then(() => socket.emit('offer', pc.localDescription));
+                                  });
+
+                                  socket.on('offer', (offer) => {
+                                    pc.setRemoteDescription(offer)
+                                      .then(() => pc.createAnswer())
+                                      .then((answer) => pc.setLocalDescription(answer))
+                                      .then(() => socket.emit('answer', pc.localDescription));
+                                  });
+
+                                  socket.on('answer', (answer) => {
+                                    pc.setRemoteDescription(answer);
+                                  });
+
+                                  socket.on('ice-candidate', (candidate) => {
+                                    pc.addIceCandidate(candidate);
+                                  });
+
+                                  socket.on('user-disconnected', () => {
+                                    remoteVideo.srcObject = null;
+                                  });
+                                 /script>
+                                 * 
+                                 */
+})})})}
+
+module.exports = {login , signup , searching , signalchat , chattingSingal , groupchat , chattingGroup , videocall};
