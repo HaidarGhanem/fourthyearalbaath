@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const mongodb = require('mongodb');
 const mongoose = require('mongoose');
 const router = require('../routes/auth.js');
+const io = require('socket.io');
 require('dotenv').config();
 
 
@@ -109,14 +110,6 @@ const searching = async (req,res) =>{
 const signalchat = (req,res)=>{
     //after front form for signal chat
     try{
-        //we will see if there an old chat with this user
-        //if there isnt create new chat with own chatid 
-        //connect the userid1 & userid2 with chatid to store the chat
-        //controller for making a socket.io conn with the chat
-        //if there was an chat with the userid2 upload it from ChatModel.chatdb
-        //----------------------------------------------------------------------
-        
-
         //getting the login userid and compare with the user2id if there is any chat
         const {userid1 , userid2 , firstname} = req.body;
         const chatdata = {userid1 , userid2 , firstname};
@@ -124,13 +117,23 @@ const signalchat = (req,res)=>{
         array.forEach(ChatModel => { 
             const data = ChatModel.find({userid1 , userid2},(err,doc)=>{
             if (chatdata.userid1 === data.userid1 && chatdata.userid2 === data.userid2)
-            {
-                const thischat = ChatModel.get
-                return (data);
+            {   //if there was a model with both id give us data
+                const thischat = ChatModel.find({chatid,userid1,userid2,message,time});
+                return (thischat);
             }
-            else if(userdata.userid != data.userid || userdata.phonenumber != data.phonenumber || userdata.firstname != data.firstname )
-            {
-                res.status(500).console.log('couldnt find user');
+            //if there isnt a model between main user and other user create new model for it
+            else if(chatdata.userid1 === data.userid1 && chatdata.userid2 != data.userid2)
+            { 
+            //and save the data of the chat for both users in chatdb
+            const newChat = new ChatModel({userid1,userid2,message,time});
+            newChat.save((err)=>{
+                if(err){
+                    console.error(err);
+                    res.status(500).json({message: error});
+                }
+                else {
+                    res.status(200).send('user saved in db');
+                }})
             }});
         });
     }
@@ -138,4 +141,85 @@ const signalchat = (req,res)=>{
 
     }
 }
-module.exports = {login , signup , searching , signalchat};
+const chattingSingal = (req,res)=>{
+    io.on('connection', (socket) => {
+        console.log('User connected');
+      
+        // Handle chat messages
+        socket.on('chat message', async (data) => {
+          // Save the message to the database
+          const chat = await ChatModel.findOneAndUpdate(
+            { chatid , userid1: data.sender, userid2: data.receiver },
+            { $push: { messages: { message: data.message, time: Date.now() } } },
+            { upsert: true, new: true }
+          );
+      
+          // Emit the message to the receiver
+          socket.to(data.receiver).emit('chat message', data);
+        });
+      
+        // Handle disconnections
+        socket.on('disconnect', () => {
+          console.log('User disconnected');
+        });
+      });
+}
+const groupchat = async (req, res) => {
+    try {
+      //getting groupid from the body
+      const { group_id } = req.body;
+  
+      // Find the group chat
+      const chat = await ChatModel.findById(group_id);
+  
+      return res.status(200).json(chat);
+    } 
+    catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  };
+const chattingGroup = (req,res) =>{
+
+// Handle Socket.IO connections
+io.on('connection', (socket) => {
+    console.log('User connected');
+  
+    // Handle joining a group chat
+    socket.on('join group', async (data) => {
+      // Join the room
+      socket.join(data.groupid);
+  
+      // Emit a message to the group that a user has joined
+      socket.to(data.groupid).emit('user joined', data.userid);
+    });
+  
+    // Handle leaving a group chat
+    socket.on('leave group', async (data) => {
+      // Leave the room
+      socket.leave(data.groupid);
+  
+      // Emit a message to the group that a user has left
+      socket.to(data.groupid).emit('user left', data.userid);
+    });
+  
+    // Handle group chat messages
+    socket.on('group message', async (data) => {
+      // Save the message to the database
+      const chat = await ChatModel.findOneAndUpdate(
+        { groupid: data.groupid },
+        { $push: { messages: { sender: data.sender, message: data.message, time: Date.now() } } },
+        { new: true }
+      );
+  
+      // Emit the message to the group
+      socket.to(data.groupid).emit('group message', data);
+    });
+  
+    // Handle disconnections
+    socket.on('disconnect', () => {
+      console.log('User disconnected');
+    });
+  });
+}
+module.exports = {login , signup , searching , signalchat , chattingSingal , groupchat , chattingGroup};
