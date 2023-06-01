@@ -219,10 +219,10 @@ const chattingSingal = (req,res)=>{
 const groupchat = async (req, res) => {
     try {
       //getting groupid from the body
-      const { group_id } = req.body;
+      const { groupid } = req.body;
   
       // Find the group chat
-      const chat = await ChatModel.findById(group_id);
+      const chat = await ChatModel.findById(groupid);
   
       return res.status(200).json(chat);
     } 
@@ -364,5 +364,104 @@ const videocall = (io) =>{
                                  * 
                                  */
 })})})}
-
-module.exports = {login , signup , searching , signalchat , chattingSingal , groupchat , chattingGroup , videocall};
+const call = (req,res) =>{
+    
+    io.on('connection', (socket) => {
+    console.log('a user connected');
+  
+    // Join a room
+    socket.on('join', (roomid) => {
+      socket.join(roomid);
+      console.log(`User joined room ${roomid}`);
+    });
+  
+    // Leave a room
+    socket.on('leave', (roomid) => {
+      socket.leave(roomid);
+      console.log(`User left room ${roomid}`);
+    });
+  
+    // Send a call
+    socket.on('call', (roomid) => {
+      socket.to(roomid).emit('call', socket.id);
+      console.log(`User ${socket.id} sent a call request to room ${roomid}`);
+    });
+  
+    // Answer a call request
+    socket.on('answer', (roomid, userid2) => {
+      socket.to(roomid).emit('answer', userid2);
+      console.log(`User ${socket.id} answered a call request from user ${userid2} in room ${roomid}`);
+    });
+  
+    // End a call
+    socket.on('end', (roomid) => {
+      socket.to(roomid).emit('end');
+      console.log(`User ${socket.id} ended the call in room ${roomid}`);
+    });
+  
+    // Disconnect
+    socket.on('disconnect', () => {
+      console.log('user disconnected');
+    });
+  });}
+  const gettingUserInfo = (req,res)=>{
+    const data = UserModel.find({userid , firstname , lastname , email , phonenumber});
+    return (data);
+  }
+  const delChat = (req,res)=>{
+    const {chatid} = req.body;
+    const del = ChatModel.findById(chatid);
+    del.deleteOne();
+  }
+  const delAccount = (req,res)=>{
+    const {userid} = req.body;
+    const del = UserModel.findById(userid);
+    del.deleteOne();
+  }
+const UpdateUserInfo = (req,res) =>{
+   const {firstname , lastname , email , password , userid} = req.body;
+   const newData = {firstname , lastname , email , password , userid};
+   const user = UserModel.findById(newData.userid);
+   user.updateOne(newData).save();
+}
+const logout = (req,res) =>{
+  //still alot to do with session as an update
+  if (req.session.user) {
+    req.session.destroy(err => {
+      if (err) {
+        res.status(500).send('Error logging out');
+      } else {
+        res.send('Logged out successfully');
+      }
+    });
+  } else {
+    res.status(400).send('Not logged in');
+}}
+const ForgetPassword = async (req, res) => {
+  try {
+    // Get user by email
+    const user = await UserModel.findOne({ email: req.body.email });
+    if (!user) {
+      return res.status(400).send('No user found with that email.');
+    }
+    // Generate random 6 digit code
+    const code = Math.floor(100000 + Math.random() * 900000);
+    // Send verification code via SMS to user's phone number
+    client.messages.create({
+      body: `Your verification code is ${code}`, 
+      from: '',  
+      to: user.phonenumber
+    });
+    // Save code and generate reset token 
+    user.updateOne({password : crypto.randomBytes(20).toString('hex')});
+    user.verificationCode = code;
+    await user.save();
+    // Send reset password email
+    res.status(200).send('Verification code sent!');
+  } catch (err) {
+    res.status(500).send(err);  
+  }
+}
+module.exports = {login , signup , searching , signalchat , chattingSingal
+   , groupchat , chattingGroup , call , videocall , logout , delChat , gettingUserInfo , UpdateUserInfo , 
+  delAccount , ForgetPassword ,  };
