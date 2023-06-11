@@ -1,0 +1,123 @@
+/* Sign Up Style */
+.S-BackG 
+{
+    background-color: #346f;
+}
+*
+{
+    margin :0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: sans-serif;
+}
+
+section
+{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: linear-gradient(-30deg 
+                                      , #687d8b 0% ,
+                                        #262626 50% ,
+                                        #2719df 50% ,  
+                                        #03a9f4 100%  );
+    animation: animate 10s linear infinite;
+}
+@keyframes animate 
+{
+    0%
+    {
+    filter: hue-rotate(0deg);
+    }
+    100%
+    {
+        filter: hue-rotate(360deg);
+    }
+}
+.S-box
+{
+
+    position: relative;
+    padding: 54px;
+    width: 380px;
+    height: 484px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(255,255,255,0.1);
+    border-radius: 6px;
+    box-shadow: 0 5px 35px rgba(0,0,0,0,2);
+}
+.S-box::after
+{
+    content: '';
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    right: 5px;
+    bottom: 5px;
+    border-radius: 5px;
+    pointer-events: none;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.3),
+                rgba(255,255,255,0.1) 15% , transparent 50% ,
+                transparent 85% , rgba(255,255,255,0.1) 100%);
+}
+
+.S-box .S-form
+{
+    position:relative;
+    width: 100%;
+}
+
+.S-box .S-form  h1
+{
+    color : #fff;
+    font-weight: 600;
+    letter-spacing: 2px;
+    margin-bottom: 38px;
+}
+
+h1
+{
+    text-align: center;
+    margin-right: 15px;
+}
+.S-box .S-form .S-inputBx  
+{
+    position: relative;
+    width: 100%;
+    margin-bottom: 28px;
+}
+
+.S-box .S-form .S-inputBx input
+{
+    width: 100%;
+    outline: none;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: transparent;
+    padding: 8px 10px;
+    padding-left: 15px;
+    border-radius: 6px;
+    color : #fff;
+    font-size: 16px;
+    font-weight: 300;
+    box-shadow: inset 0 0 25px rgba(0,0,0,0.2);
+}
+
+.S-box .S-form .S-inputbx input::placeholder
+{
+    color: #fff;
+}
+
+.S-box .S-form .S-inputbx input[type="submit"]
+{
+    background: #fff;
+    color: #111;
+    max-width: 100px;
+    padding: 8px 10px;
+    box-shadow: none;
+    font-weight: 500;
+    letter-spacing: 1px;
+    cursor: pointer;
+}

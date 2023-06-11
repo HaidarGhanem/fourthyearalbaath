@@ -6,7 +6,7 @@ const mongo = require('mongoose');
 const mongodb = require('mongodb');
 const session =require('express-session');
 const passport = require('passport');
-const authRoutes = require("./routes/auth.js");
+//const authRoutes = require("./routes/auth.js");
 require('dotenv').config();
 //-----------connection to mongodb----------
 mongo
@@ -21,7 +21,7 @@ mongo
     console.error(err);
   });
 //------------------------------------------
-app.use(express.static('public'));
+app.use(express.static('client'));
 app.use(session({
                   secret:'secret',
                   resave:false,
@@ -29,13 +29,13 @@ app.use(session({
 );
 app.use(passport.initialize());
 app.use(passport.session());
-passport.use(new LocalStrategy({ usernameField: 'email' }, async (email, password, done) => {
+//passport.use(new LocalStrategy({ usernameField: 'email' }, async (email, password, done) => {
   app.post('/login', passport.authenticate('local', {
     successRedirect: '/success',
     failureRedirect: '/failure',}));
-}));
+//}));
 //----------------------------------------
-app.use('/auth', authRoutes);
+//app.use('/auth', authRoutes);
 //----------------------------------------
 const PORT = process.env.PORT || 80;
 server.listen(PORT, () => {

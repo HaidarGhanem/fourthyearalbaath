@@ -1,0 +1,76 @@
+.C-box
+{
+
+    position: relative;
+    padding: 54px;
+    width: 380px;
+    height: 484px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(255,255,255,0.1);
+    border-radius: 6px;
+    box-shadow: 0 5px 35px rgba(0,0,0,0,2);
+}
+.C-box::after
+{
+    content: '';
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    right: 5px;
+    bottom: 5px;
+    border-radius: 5px;
+    pointer-events: none;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.3),
+                rgba(255,255,255,0.1) 15% , transparent 50% ,
+                transparent 85% , rgba(255,255,255,0.1) 100%);
+}
+
+.C-box .C-form  h1
+{
+    color : #fff;
+    font-weight: 600;
+    letter-spacing: 2px;
+    margin-bottom: 38px;
+}
+
+.C-box .C-form .C-inputBx  
+{
+    position: relative;
+    width: 100%;
+    margin-bottom: 28px;
+}
+
+.C-box .C-form .C-inputBx input
+{
+    width: 40px;
+    height: 40px;
+    outline: none;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: transparent;
+    margin: 2px;
+    padding: 8px 10px;
+    padding-left: 15px;
+    border-radius: 6px;
+    color : #fff;
+    font-size: 16px;
+    font-weight: 300;
+    box-shadow: inset 0 0 25px rgba(0,0,0,0.2);
+}
+.V-inputBx input[type="submit"]
+{
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    outline: none;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.2);
+    color : #fff;
+    font-size: 16px;
+    font-weight: 300;
+    margin: 2px;
+    padding: 8px 10px;
+    padding-left: 15px;
+    
+}
